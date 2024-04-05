@@ -39,6 +39,11 @@ resource "tencentcloud_instance" "this" {
   internet_max_bandwidth_out = 50
 
   tags = var.tags
+
+  # waiting for the TAT agent installation
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
 }
 
 data "tencentcloud_tat_command" "this" {
@@ -66,4 +71,19 @@ resource "tencentcloud_tat_command" "this" {
   default_parameters = jsonencode({
     "network" : ""
   })
+}
+
+resource "tencentcloud_tat_invocation_invoke_attachment" "this" {
+  command_id        = var.create_tat_command ? tencentcloud_tat_command.this[0].id : data.tencentcloud_tat_command.this.command_set[0].command_id
+  instance_id       = tencentcloud_instance.this.id
+  username          = "ubuntu"
+  timeout           = 86000
+  working_directory = "/home/ubuntu"
+  parameters = jsonencode({
+    network = var.merlin_network
+  })
+
+  depends_on = [
+    tencentcloud_instance.this
+  ]
 }
