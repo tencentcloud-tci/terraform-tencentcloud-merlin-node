@@ -52,3 +52,12 @@ variable "create_tat_command" {
   type        = bool
   description = "Determine whether to create the TAT command to do merlin node deployment"
 }
+
+variable "merlin_network" {
+  type        = string
+  description = "The network of merlin chain"
+  validation {
+    condition     = contains(["mainnet", "testnet"], var.merlin_network)
+    error_message = "Please choose one of the following network: mainnet, testnet"
+  }
+}
