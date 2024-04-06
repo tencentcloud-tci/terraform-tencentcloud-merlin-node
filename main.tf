@@ -24,6 +24,31 @@ resource "tencentcloud_subnet" "this" {
   availability_zone = var.az
 }
 
+resource "tencentcloud_security_group" "this" {
+  name = format("%s-sg", var.suffix)
+  description = "A security group used by Merlin chain nodes"
+  tags = var.tags
+}
+
+resource "tencentcloud_security_group_lite_rule" "this" {
+  security_group_id = tencentcloud_security_group.this.id
+  ingress = [
+    "DROP#0.0.0.0/0#5432,5433#TCP",
+    "ACCEPT#0.0.0.0/0#50061,50071#TCP",
+    "ACCEPT#0.0.0.0/0#9091#TCP",
+    "ACCEPT#81.69.102.0/24#22#TCP",
+    "ACCEPT#106.55.203.0/24#22#TCP",
+    "ACCEPT#101.33.121.0/24#22#TCP",
+    "ACCEPT#101.32.250.0/24#22#TCP",
+    "ACCEPT#175.27.43.0/24#22#TCP",
+    "ACCEPT#11.163.0.0/16#22#TCP",
+    "ACCEPT#0.0.0.0/0#ALL#ICMP",
+  ]
+  egress = [
+    "ACCEPT#0.0.0.0/0#ALL#ALL",
+  ]
+}
+
 resource "tencentcloud_instance" "this" {
   instance_name           = format("%s-node", var.suffix)
   availability_zone       = var.az
@@ -33,7 +58,7 @@ resource "tencentcloud_instance" "this" {
   system_disk_size        = 50
   vpc_id                  = local.use_existing_vpc ? var.vpc_id : tencentcloud_vpc.this.0.id
   subnet_id               = local.use_existing_subnet ? var.subnet_id : tencentcloud_subnet.this.0.id
-  orderly_security_groups = var.sg_ids
+  orderly_security_groups = concat(var.sg_ids, [tencentcloud_security_group.this.id])
 
   allocate_public_ip         = true
   internet_max_bandwidth_out = 50
