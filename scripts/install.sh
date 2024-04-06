@@ -168,31 +168,44 @@ run_node() {
     sudo docker compose up --quiet-pull -d cdk-validium-json-rpc
 }
 
+before() {
+    if [ "$NETWORK" = "mainnet" ] || [ "$NETWORK" = "testnet" ]; then
+        if [ -f $MERLIN_NETWORK_FILE ]; then
+            local existing_network=$(cat $MERLIN_NETWORK_FILE)
+            if [ "$NETWORK" != $existing_network ]; then
+                echo "ERROR: $existing_network(not $NETWORK) node has been deployed"
+                exit 1
+            else
+                echo "INFO: $NETWORK node has already been deployed"
+                exit 0
+            fi
+        fi
+        echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== Start to deploy $NETWORK ====="
+    else
+        echo "ERROR: network=$NETWORK is not valid."
+        exit 1
+    fi
+}
+
+after() {
+    local block_number=`curl --location 'http://localhost:8123' -s --header 'Content-Type: application/json' --data '{\
+    "jsonrpc": "2.0",\
+    "method": "eth_blockNumber",\
+    "params": [],\
+    "id": 1\
+    }' | jq -r '.result' | xargs -I {} printf "%d\n" {}`
+    echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== Block number: $block_number ====="
+    sudo sh -c "echo $NETWORK > $MERLIN_NETWORK_FILE"
+    echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== Finished deploying $NETWORK ====="
+}
+
 # ------------------------------
 # main
 # ------------------------------
 
-if [ "$NETWORK" = "mainnet" ] || [ "$NETWORK" = "testnet" ]; then
-    if [ -f $MERLIN_NETWORK_FILE ]; then
-        existing_network=$(cat $MERLIN_NETWORK_FILE)
-        if [ "$NETWORK" != $existing_network ]; then
-            echo "ERROR: $existing_network(not $NETWORK) node has been deployed"
-            exit 1
-        else
-            echo "INFO: $NETWORK node has already been deployed"
-            exit 0
-        fi
-    fi
-    echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== Start to deploy $NETWORK ====="
-else
-    echo "ERROR: network=$NETWORK is not valid."
-    exit 1
-fi
-
+before
 init_nvme_disk
 init_env
 run_db
 run_node
-
-sudo sh -c "echo $NETWORK > $MERLIN_NETWORK_FILE"
-echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== Finished deploying $NETWORK ====="
+after
