@@ -18,39 +18,16 @@ NETWORK={{network}}
 
 init_nvme_disk() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== 1. init_nvme_disk ====="
-    # 获取实例类型
-    INSTANCE_TYPE=`curl http://metadata.tencentyun.com/latest/meta-data/instance/instance-type`
-
-    # 获取 path to device
-    if [ "$INSTANCE_TYPE" == "ITA4.4XLARGE64" ]; then
-        ldisk=$(ls /dev/disk/by-id |grep nvme-eui)
-        device_path=$(readlink -f /dev/disk/by-id/$ldisk)
-    elif [ "$INSTANCE_TYPE" == "IT5.4XLARGE64" ]; then
-        ldisk=$(ls /dev/disk/by-id |grep ldisk)
-        device_path=$(readlink -f /dev/disk/by-id/$ldisk)
-    else
-        echo "ERROR: unsupported instance type [$INSTANCE_TYPE]"
-        exit 1
+    
+    if [ ! -d "$BASE_DIR/state_db" ]; then
+        sudo mkdir $BASE_DIR/state_db
     fi
-
-    if mount | grep "$device_path" > /dev/null; then
-        echo "$device_path is mounted"
-        return
+    if [ ! -d "$BASE_DIR/pool_db" ]; then
+        sudo mkdir $BASE_DIR/pool_db
     fi
-
-    sudo mkfs -t ext4 $device_path
-
-    sudo mkdir $BASE_DIR
-    sudo mount /dev/vdb $BASE_DIR
-
-    # 获取 UUID
-    uuid=$(sudo blkid -o value -s UUID $device_path)
-    sudo sh -c "echo \"/dev/disk/by-uuid/$uuid $BASE_DIR ext4 defaults 0 0\" >> /etc/fstab"
-
-    #
-    sudo mkdir $BASE_DIR/state_db
-    sudo mkdir $BASE_DIR/pool_db
-    sudo mkdir $INSTALL_DIR
+    if [ ! -d "$INSTALL_DIR" ]; then
+        sudo mkdir $INSTALL_DIR
+    fi
 }
 
 init_env() {
@@ -135,26 +112,34 @@ run_db() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ 3.3 Download & import recovery database snapshot +++++"
     if [ "$NETWORK" == "mainnet" ]; then
         # Mainnet
-        if [ -f "$INSTALL_DIR/prover_db.sql.tar.gz" ]; then
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading recovery database snapshot -----"
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
+        if [ -s "$INSTALL_DIR/prover_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading prover_db.sql.tar.gz -----"
         else
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/state_db.sql.tar.gz &
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/prover_db.sql.tar.gz &
-            wait
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/prover_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading prover_db.sql.tar.gz ++++++"
         fi
+        if [ -s "$INSTALL_DIR/state_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading state_db.sql.tar.gz -----"
+        else
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/state_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading state_db.sql.tar.gz +++++"
+        fi
+        ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
     else
         # Testnet
-        if [ -f "$INSTALL_DIR/testnet_prover_db.sql.tar.gz" ]; then
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading recovery database snapshot -----"
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
+        if [ -s "$INSTALL_DIR/testnet_prover_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading testnet_prover_db.sql.tar.gz -----"
         else
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_state_db.sql.tar.gz &
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_prover_db.sql.tar.gz &
-            wait
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_prover_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading testnet_prover_db.sql.tar.gz ++++++"
         fi
+        if [ -s "$INSTALL_DIR/testnet_state_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading testnet_state_db.sql.tar.gz -----"
+        else
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_state_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading testnet_state_db.sql.tar.gz +++++"
+        fi
+        ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
     fi
 }
 
