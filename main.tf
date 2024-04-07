@@ -25,9 +25,9 @@ resource "tencentcloud_subnet" "this" {
 }
 
 resource "tencentcloud_security_group" "this" {
-  name = format("%s-sg", var.suffix)
+  name        = format("%s-sg", var.suffix)
   description = "A security group used by Merlin chain nodes"
-  tags = var.tags
+  tags        = var.tags
 }
 
 resource "tencentcloud_security_group_lite_rule" "this" {
