@@ -18,9 +18,20 @@ NETWORK={{network}}
 
 init_nvme_disk() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== 1. init_nvme_disk ====="
+    # 获取实例类型
+    INSTANCE_TYPE=`curl http://metadata.tencentyun.com/latest/meta-data/instance/instance-type`
+
     # 获取 path to device
-    ldisk=$(ls /dev/disk/by-id |grep ldisk)
-    device_path=$(readlink -f /dev/disk/by-id/$ldisk)
+    if [ "$INSTANCE_TYPE" == "ITA4.4XLARGE64" ]; then
+        ldisk=$(ls /dev/disk/by-id |grep nvme-eui)
+        device_path=$(readlink -f /dev/disk/by-id/$ldisk)
+    elif [ "$INSTANCE_TYPE" == "IT5.4XLARGE64" ]; then
+        ldisk=$(ls /dev/disk/by-id |grep ldisk)
+        device_path=$(readlink -f /dev/disk/by-id/$ldisk)
+    else
+        echo "ERROR: unsupported instance type [$INSTANCE_TYPE]"
+        exit 1
+    fi
 
     if mount | grep "$device_path" > /dev/null; then
         echo "$device_path is mounted"
