@@ -18,28 +18,16 @@ NETWORK={{network}}
 
 init_nvme_disk() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== 1. init_nvme_disk ====="
-    # 获取 path to device
-    ldisk=$(ls /dev/disk/by-id |grep ldisk)
-    device_path=$(readlink -f /dev/disk/by-id/$ldisk)
-
-    if mount | grep "$device_path" > /dev/null; then
-        echo "$device_path is mounted"
-        return
+    
+    if [ ! -d "$BASE_DIR/state_db" ]; then
+        sudo mkdir $BASE_DIR/state_db
     fi
-
-    sudo mkfs -t ext4 $device_path
-
-    sudo mkdir $BASE_DIR
-    sudo mount /dev/vdb $BASE_DIR
-
-    # 获取 UUID
-    uuid=$(sudo blkid -o value -s UUID $device_path)
-    sudo sh -c "echo \"/dev/disk/by-uuid/$uuid $BASE_DIR ext4 defaults 0 0\" >> /etc/fstab"
-
-    #
-    sudo mkdir $BASE_DIR/state_db
-    sudo mkdir $BASE_DIR/pool_db
-    sudo mkdir $INSTALL_DIR
+    if [ ! -d "$BASE_DIR/pool_db" ]; then
+        sudo mkdir $BASE_DIR/pool_db
+    fi
+    if [ ! -d "$INSTALL_DIR" ]; then
+        sudo mkdir $INSTALL_DIR
+    fi
 }
 
 init_env() {
@@ -48,7 +36,7 @@ init_env() {
         # install docker
         echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ 2.1 Install docker +++++"
         sudo apt-get -qq update
-        sudo apt-get install -y -qq ca-certificates curl > /dev/null
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl jq > /dev/null
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -58,7 +46,7 @@ init_env() {
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
         sudo apt-get -qq update
 
-        sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin > /dev/null
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin > /dev/null
         sudo service docker start
     else
         echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- 2.1 [Skip]Install docker -----"
@@ -107,11 +95,11 @@ run_db() {
         cd cdk-validium-node
     else
         echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ 3.2 Install cdk-validium-node +++++"
-        sudo apt-get install gnupg2 wget vim -y -qq > /dev/null
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install gnupg2 wget vim -y -qq > /dev/null
         sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
         wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
         sudo apt-get -qq update -y
-        sudo apt-get install postgresql-client-15 -y -qq > /dev/null
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install postgresql-client-15 -y -qq > /dev/null
 
         git clone https://github.com/0xPolygon/cdk-validium-node.git
         cd cdk-validium-node
@@ -124,26 +112,34 @@ run_db() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ 3.3 Download & import recovery database snapshot +++++"
     if [ "$NETWORK" == "mainnet" ]; then
         # Mainnet
-        if [ -f "$INSTALL_DIR/prover_db.sql.tar.gz" ]; then
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading recovery database snapshot -----"
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
+        if [ -s "$INSTALL_DIR/prover_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading prover_db.sql.tar.gz -----"
         else
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/state_db.sql.tar.gz &
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/prover_db.sql.tar.gz &
-            wait
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/prover_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading prover_db.sql.tar.gz ++++++"
         fi
+        if [ -s "$INSTALL_DIR/state_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading state_db.sql.tar.gz -----"
+        else
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/state_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading state_db.sql.tar.gz +++++"
+        fi
+        ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/state_db.sql.tar.gz -ih $INSTALL_DIR/prover_db.sql.tar.gz
     else
         # Testnet
-        if [ -f "$INSTALL_DIR/testnet_prover_db.sql.tar.gz" ]; then
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading recovery database snapshot -----"
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
+        if [ -s "$INSTALL_DIR/testnet_prover_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading testnet_prover_db.sql.tar.gz -----"
         else
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_state_db.sql.tar.gz &
-            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_prover_db.sql.tar.gz &
-            wait
-            ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_prover_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading testnet_prover_db.sql.tar.gz ++++++"
         fi
+        if [ -s "$INSTALL_DIR/testnet_state_db.sql.tar.gz" ]; then
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]----- [Skip] downloading testnet_state_db.sql.tar.gz -----"
+        else
+            sudo wget -q -P $INSTALL_DIR https://merlin-chain-snapshot.s3.ap-east-1.amazonaws.com/testnet_state_db.sql.tar.gz
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ Finish downloading testnet_state_db.sql.tar.gz +++++"
+        fi
+        ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
     fi
 }
 
@@ -188,6 +184,8 @@ before() {
 }
 
 after() {
+    # wait for ready
+    sleep 10
     local block_number=`curl --location 'http://localhost:8123' -s --header 'Content-Type: application/json' --data '{\
     "jsonrpc": "2.0",\
     "method": "eth_blockNumber",\

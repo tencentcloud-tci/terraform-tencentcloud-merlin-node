@@ -25,9 +25,9 @@ resource "tencentcloud_subnet" "this" {
 }
 
 resource "tencentcloud_security_group" "this" {
-  name = format("%s-sg", var.suffix)
+  name        = format("%s-sg", var.suffix)
   description = "A security group used by Merlin chain nodes"
-  tags = var.tags
+  tags        = var.tags
 }
 
 resource "tencentcloud_security_group_lite_rule" "this" {
@@ -65,6 +65,8 @@ resource "tencentcloud_instance" "this" {
 
   tags = var.tags
 
+  user_data = base64encode(file("${path.module}/scripts/mount_nvme.sh"))
+
   # waiting for the TAT agent installation
   provisioner "local-exec" {
     command = "sleep 30"
@@ -86,7 +88,7 @@ data "tencentcloud_tat_command" "this" {
 resource "tencentcloud_tat_command" "this" {
   count             = var.create_tat_command ? 1 : 0
   command_name      = local.command_name
-  content           = file(join("", [path.module, "/scripts/install.sh"]))
+  content           = file("${path.module}/scripts/install.sh")
   description       = "Deploy merlin node"
   command_type      = "SHELL"
   timeout           = 86000
