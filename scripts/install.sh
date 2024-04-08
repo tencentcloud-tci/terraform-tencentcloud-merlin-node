@@ -36,7 +36,7 @@ init_env() {
         # install docker
         echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]+++++ 2.1 Install docker +++++"
         sudo apt-get -qq update
-        sudo apt-get install -y -qq ca-certificates curl > /dev/null
+        sudo apt-get install -y -qq ca-certificates curl jq > /dev/null
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
