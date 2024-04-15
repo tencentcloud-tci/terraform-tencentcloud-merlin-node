@@ -57,8 +57,8 @@ variable "instance_type" {
   type        = string
   description = "value"
   validation {
-    condition     = contains(["IT5.4XLARGE64", "ITA4.4XLARGE64"], var.instance_type)
-    error_message = "Please choose one of the following type: ITA4.4XLARGE64, IT5.4XLARGE64"
+    condition     = startswith(var.instance_type, "ITA4") || startswith(var.instance_type, "ITA5") || startswith(var.instance_type, "IT5")
+    error_message = "The instance_type must start with ITA4, ITA5, or IT5."
   }
 }
 
