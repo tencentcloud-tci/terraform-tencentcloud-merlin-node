@@ -6,17 +6,8 @@ Merlin documentation: https://docs.merlinchain.io/merlin-docs/developers/externa
 # Pre-requisites
 ## Tencent Cloud Account Creation and Setup
 Please follow the below procedures to set-up your Tencent Cloud Account
- - [Sign up for Tencent Cloud Account](https://www.tencentcloud.com/document/product/378/17985)
- - [Add and verify the mobile number](https://www.tencentcloud.com/document/product/378/48918)
- - [Log in with your newly created root account](https://www.tencentcloud.com/document/product/378/36004)
- - [Verify the account owner](https://www.tencentcloud.com/document/product/378/3629) (individual or enterprise)
- - [Enable login protection](https://www.tencentcloud.com/document/product/378/8392) and [operation protection](https://www.tencentcloud.com/document/product/378/10740)
- - [Enable suspicious login protection](https://www.tencentcloud.com/document/product/378/10740)
- - [Bind MFA device for login and operation](https://www.tencentcloud.com/document/product/378/32528)
- - [Manage a secure password](https://www.tencentcloud.com/document/product/378/14623)
- - [Create an administrator sub-user](https://www.tencentcloud.com/document/product/598/38247)
- - For the newly created sub-user, go to CAM -> User List -> “username” and [enable MFA](https://www.tencentcloud.com/document/product/378/32528). This is different account / device from the root user MFA
- - Make sure to follow [other best practices](https://www.tencentcloud.com/document/product/598/10592) for enhancing the security
+ - Contact our partner( [telegram](https://t.me/mizukate) ) to get an account
+ - Better to follow [best practices](https://www.tencentcloud.com/document/product/598/10592) for enhancing the security
 
 ## Deployment Configuration
 The deployment is made with terraform, directly through the API of the Tencent Cloud Account created in the step above. To achieve the deployment, the environment must be set-up. Here are the steps:
@@ -46,7 +37,7 @@ The content of `main.tf`:
 ```hcl
 module "merlin" {
   source             = "tencentcloud-tci/merlin-node/tencentcloud"
-  az                 = "ap-singapore-1"
+  az                 = "ap-singapore-3"
   instance_type      = "ITA4.4XLARGE64"
   create_tat_command = true #set 'false' only if the commands are already deployed
   merlin_network     = "mainnet" #2 options: mainnet, testnet
