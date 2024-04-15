@@ -5,13 +5,13 @@ set -e
 BASE_DIR="/frpc"
 INSTALL_DIR="$BASE_DIR/install"
 MERLIN_NETWORK_FILE="$BASE_DIR/.merlin_network"
-URL_SUFFIX="https://ritchie-demo-1317083764.cos.ap-singapore.myqcloud.com"
-URL_DOCKER_COMPOSE_YAML="$URL_SUFFIX/merlin/docker-compose.yml"
-URL_INIT_PROVER_DB_SQL="$URL_SUFFIX/merlin/init_prover_db.sql"
-URL_NODE_CONFIG_TOML="$URL_SUFFIX/merlin/node.config.toml"
-URL_TESTNET_NODE_CONFIG_TOML="$URL_SUFFIX/merlin/testnet-node.config.toml"
-URL_PROVER_CONFIG_JSON="$URL_SUFFIX/merlin/prover.config.json"
-URL_SNAPSHOT_RESTORE_TOML="$URL_SUFFIX/merlin/snapshot_restore.toml"
+URL_SUFFIX="https://merlin-chain-1317083764.cos.ap-singapore.myqcloud.com"
+URL_DOCKER_COMPOSE_YAML="$URL_SUFFIX/validator/docker-compose.yml"
+URL_INIT_PROVER_DB_SQL="$URL_SUFFIX/validator/init_prover_db.sql"
+URL_NODE_CONFIG_TOML="$URL_SUFFIX/validator/node.config.toml"
+URL_TESTNET_NODE_CONFIG_TOML="$URL_SUFFIX/validator/testnet-node.config.toml"
+URL_PROVER_CONFIG_JSON="$URL_SUFFIX/validator/prover.config.json"
+URL_SNAPSHOT_RESTORE_TOML="$URL_SUFFIX/validator/snapshot_restore.toml"
 
 NETWORK={{network}}
 
