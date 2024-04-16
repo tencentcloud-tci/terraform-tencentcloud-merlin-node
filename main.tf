@@ -62,6 +62,9 @@ resource "tencentcloud_instance" "this" {
 
   allocate_public_ip         = true
   internet_max_bandwidth_out = 50
+  instance_charge_type = var.instance_charge_type
+  instance_charge_type_prepaid_period = 1
+  instance_charge_type_prepaid_renew_flag = "NOTIFY_AND_AUTO_RENEW"
 
   tags = var.tags
 

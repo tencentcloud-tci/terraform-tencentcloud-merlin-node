@@ -75,3 +75,13 @@ variable "merlin_network" {
     error_message = "Please choose one of the following network: mainnet, testnet"
   }
 }
+
+variable "instance_charge_type" {
+  type        = string
+  default     = "POSTPAID_BY_HOUR"
+  description = "The charge type of instance"
+  validation {
+    condition     = contains(["POSTPAID_BY_HOUR", "PREPAID"], var.instance_charge_type)
+    error_message = "Please choose one of the following network: POSTPAID_BY_HOUR, PREPAID"
+  }
+}
