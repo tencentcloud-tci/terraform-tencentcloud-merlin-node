@@ -60,8 +60,11 @@ resource "tencentcloud_instance" "this" {
   subnet_id               = local.use_existing_subnet ? var.subnet_id : tencentcloud_subnet.this.0.id
   orderly_security_groups = concat(var.sg_ids, [tencentcloud_security_group.this.id])
 
-  allocate_public_ip         = true
-  internet_max_bandwidth_out = 50
+  allocate_public_ip                      = true
+  internet_max_bandwidth_out              = 50
+  instance_charge_type                    = var.instance_charge_type
+  instance_charge_type_prepaid_period     = 1
+  instance_charge_type_prepaid_renew_flag = "NOTIFY_AND_AUTO_RENEW"
 
   tags = var.tags
 
