@@ -11,7 +11,7 @@ variable "az" {
 
 variable "sg_ids" {
   type        = list(string)
-  description = "Security group ids"
+  description = "Extra security groups attached to instance"
   default     = []
 }
 
