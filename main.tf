@@ -13,7 +13,7 @@ locals {
 resource "tencentcloud_vpc" "this" {
   count      = local.use_existing_vpc ? 0 : 1
   cidr_block = var.vpc_cidr
-  name       = format("%s-vpc", var.suffix)
+  name       = "${var.suffix}-vpc"
   tags       = var.tags
 }
 
@@ -21,12 +21,12 @@ resource "tencentcloud_subnet" "this" {
   count             = local.use_existing_subnet ? 0 : 1
   vpc_id            = local.use_existing_vpc ? var.vpc_id : tencentcloud_vpc.this.0.id
   cidr_block        = var.subnet_cidr
-  name              = format("%s-subnet", var.suffix)
+  name              = "${var.suffix}-subnet"
   availability_zone = var.az
 }
 
 resource "tencentcloud_security_group" "this" {
-  name        = format("%s-sg", var.suffix)
+  name        = "${var.suffix}-sg"
   description = "A security group used by Merlin chain nodes"
   tags        = var.tags
 }
@@ -51,7 +51,8 @@ resource "tencentcloud_security_group_lite_rule" "this" {
 }
 
 resource "tencentcloud_instance" "this" {
-  instance_name           = format("%s-node", var.suffix)
+  count                   = var.instance_count
+  instance_name           = "${var.suffix}-node-${count.index}"
   availability_zone       = var.az
   instance_type           = var.instance_type
   image_id                = data.tencentcloud_images.this.images.0.image_id
@@ -120,8 +121,9 @@ resource "tencentcloud_tat_command" "tool" {
 }
 
 resource "tencentcloud_tat_invocation_invoke_attachment" "this" {
+  count             = length(tencentcloud_instance.this)
   command_id        = var.create_tat_command ? tencentcloud_tat_command.this[0].id : data.tencentcloud_tat_command.this.command_set[0].command_id
-  instance_id       = tencentcloud_instance.this.id
+  instance_id       = tencentcloud_instance.this[count.index].id
   username          = "ubuntu"
   timeout           = 86000
   working_directory = "/home/ubuntu"
