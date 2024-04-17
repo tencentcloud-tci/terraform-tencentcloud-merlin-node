@@ -85,3 +85,9 @@ variable "instance_charge_type" {
     error_message = "Please choose one of the following network: POSTPAID_BY_HOUR, PREPAID"
   }
 }
+
+variable "instance_count" {
+  type        = number
+  default     = 1
+  description = "The number of nodes need to be created"
+}
