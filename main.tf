@@ -4,9 +4,10 @@ data "tencentcloud_images" "this" {
 }
 
 locals {
-  use_existing_vpc    = var.vpc_id != ""
-  use_existing_subnet = var.subnet_id != ""
-  command_name        = "merlin-node-installer"
+  use_existing_vpc       = var.vpc_id != ""
+  use_existing_subnet    = var.subnet_id != ""
+  installer_command_name = "merlin-node-installer"
+  tool_command_name      = "merlin-node-tool"
 }
 
 resource "tencentcloud_vpc" "this" {
@@ -63,8 +64,8 @@ resource "tencentcloud_instance" "this" {
   allocate_public_ip                      = true
   internet_max_bandwidth_out              = 50
   instance_charge_type                    = var.instance_charge_type
-  instance_charge_type_prepaid_period     = 1
-  instance_charge_type_prepaid_renew_flag = "NOTIFY_AND_AUTO_RENEW"
+  instance_charge_type_prepaid_period     = var.instance_charge_type == "PREPAID" ? 1 : null
+  instance_charge_type_prepaid_renew_flag = var.instance_charge_type == "PREPAID" ? "NOTIFY_AND_AUTO_RENEW" : null
 
   tags = var.tags
 
@@ -79,7 +80,7 @@ resource "tencentcloud_instance" "this" {
 data "tencentcloud_tat_command" "this" {
   command_type = "SHELL"
   created_by   = "USER"
-  command_name = local.command_name
+  command_name = local.installer_command_name
   lifecycle {
     postcondition {
       condition     = anytrue([!var.create_tat_command && self.command_set != null, var.create_tat_command])
@@ -90,7 +91,7 @@ data "tencentcloud_tat_command" "this" {
 
 resource "tencentcloud_tat_command" "this" {
   count             = var.create_tat_command ? 1 : 0
-  command_name      = local.command_name
+  command_name      = local.installer_command_name
   content           = file("${path.module}/scripts/install.sh")
   description       = "Deploy merlin node"
   command_type      = "SHELL"
@@ -100,6 +101,21 @@ resource "tencentcloud_tat_command" "this" {
   enable_parameter  = true
   default_parameters = jsonencode({
     "network" : ""
+  })
+}
+
+resource "tencentcloud_tat_command" "tool" {
+  count             = var.create_tat_command ? 1 : 0
+  command_name      = local.tool_command_name
+  content           = file("${path.module}/scripts/tool.sh")
+  description       = "Operation tool for merlin node"
+  command_type      = "SHELL"
+  timeout           = 3600
+  username          = "ubuntu"
+  working_directory = "/home/ubuntu"
+  enable_parameter  = true
+  default_parameters = jsonencode({
+    "command" : ""
   })
 }
 

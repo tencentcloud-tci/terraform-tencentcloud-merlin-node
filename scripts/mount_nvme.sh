@@ -4,11 +4,11 @@ BASE_DIR="/frpc"
 INSTANCE_TYPE=`curl http://metadata.tencentyun.com/latest/meta-data/instance/instance-type`
 
 # 获取 path to device
-if [ "$INSTANCE_TYPE" == "ITA4.4XLARGE64" ]; then
-    ldisk=$(ls /dev/disk/by-id |grep nvme-eui)
+if [[ ${INSTANCE_TYPE:0:3} == "ITA" ]]; then
+    ldisk=$(ls /dev/disk/by-id | grep nvme-eui | head -n 1)
     device_path=$(readlink -f /dev/disk/by-id/$ldisk)
-elif [ "$INSTANCE_TYPE" == "IT5.4XLARGE64" ]; then
-    ldisk=$(ls /dev/disk/by-id |grep ldisk)
+elif [ ${INSTANCE_TYPE:0:3} == "IT5" ]; then
+    ldisk=$(ls /dev/disk/by-id | grep ldisk | head -n 1)
     device_path=$(readlink -f /dev/disk/by-id/$ldisk)
 else
     echo "ERROR: unsupported instance type [$INSTANCE_TYPE]"
