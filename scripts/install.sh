@@ -12,6 +12,7 @@ URL_NODE_CONFIG_TOML="$URL_SUFFIX/validator/node.config.toml"
 URL_TESTNET_NODE_CONFIG_TOML="$URL_SUFFIX/validator/testnet-node.config.toml"
 URL_PROVER_CONFIG_JSON="$URL_SUFFIX/validator/prover.config.json"
 URL_SNAPSHOT_RESTORE_TOML="$URL_SUFFIX/validator/snapshot_restore.toml"
+URL_STATE_DB_INDEX_SQL="$URL_SUFFIX/validator/state_db_index.sql"
 
 NETWORK={{network}}
 
@@ -141,6 +142,11 @@ run_db() {
         fi
         ./build restore --cfg ./snapshot_restore.toml -is $INSTALL_DIR/testnet_state_db.sql.tar.gz -ih $INSTALL_DIR/testnet_prover_db.sql.tar.gz
     fi
+
+    # create index for state_db
+    cd -
+    curl -fsSL $URL_STATE_DB_INDEX_SQL -o state_db_index.sql && chmod a+r state_db_index.sql
+    PGPASSWORD=state_password psql -h localhost -p 5432 -U state_user -d state_db -q -f state_db_index.sql
 }
 
 run_node() {
