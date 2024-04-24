@@ -13,7 +13,7 @@ locals {
 resource "tencentcloud_vpc" "this" {
   count      = local.use_existing_vpc ? 0 : 1
   cidr_block = var.vpc_cidr
-  name       = "${var.suffix}-vpc"
+  name       = "${var.prefix}-vpc"
   tags       = var.tags
 }
 
@@ -21,12 +21,12 @@ resource "tencentcloud_subnet" "this" {
   count             = local.use_existing_subnet ? 0 : 1
   vpc_id            = local.use_existing_vpc ? var.vpc_id : tencentcloud_vpc.this.0.id
   cidr_block        = var.subnet_cidr
-  name              = "${var.suffix}-subnet"
+  name              = "${var.prefix}-subnet"
   availability_zone = var.az
 }
 
 resource "tencentcloud_security_group" "this" {
-  name        = "${var.suffix}-sg"
+  name        = "${var.prefix}-sg"
   description = "A security group used by Merlin chain nodes"
   tags        = var.tags
 }
@@ -52,7 +52,7 @@ resource "tencentcloud_security_group_lite_rule" "this" {
 
 resource "tencentcloud_instance" "this" {
   count                   = var.instance_count
-  instance_name           = "${var.suffix}-node-${count.index}"
+  instance_name           = "${var.prefix}-node-${count.index}"
   availability_zone       = var.az
   instance_type           = var.instance_type
   image_id                = data.tencentcloud_images.this.images.0.image_id
