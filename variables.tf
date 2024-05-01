@@ -1,6 +1,6 @@
-variable "suffix" {
+variable "prefix" {
   type        = string
-  description = "Suffix used to set different resources' name"
+  description = "Prefix used to set different resources' name"
   default     = "Merlin"
 }
 
