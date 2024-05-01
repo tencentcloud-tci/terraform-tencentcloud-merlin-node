@@ -151,7 +151,7 @@ run_db() {
 
 run_node() {
     echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')]===== 4. run_node ====="
-    cd -
+    cd ~
     if [ "$NETWORK" == "mainnet" ]; then
         wget -q http://18.167.109.180:8866/merlin/mainnet/genesis.json
     else

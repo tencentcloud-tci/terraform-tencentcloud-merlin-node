@@ -60,7 +60,7 @@ resource "tencentcloud_instance" "this" {
   system_disk_size        = 50
   vpc_id                  = local.use_existing_vpc ? var.vpc_id : tencentcloud_vpc.this.0.id
   subnet_id               = local.use_existing_subnet ? var.subnet_id : tencentcloud_subnet.this.0.id
-  orderly_security_groups = concat(var.sg_ids, [tencentcloud_security_group.this.id])
+  orderly_security_groups = concat([tencentcloud_security_group.this.id], var.sg_ids)
 
   allocate_public_ip                      = true
   internet_max_bandwidth_out              = 50
