@@ -144,7 +144,7 @@ run_db() {
     fi
 
     # create index for state_db
-    cd -
+    cd ~
     curl -fsSL $URL_STATE_DB_INDEX_SQL -o state_db_index.sql && chmod a+r state_db_index.sql
     PGPASSWORD=state_password psql -h localhost -p 5432 -U state_user -d state_db -q -f state_db_index.sql
 }
